@@ -46,7 +46,7 @@ public class LongReach : ModuleRules
 
 		// FactoryGame plugins
 		PublicDependencyModuleNames.AddRange(new string[] {
-			//"AbstractInstance",
+			"AbstractInstance",
 			//"InstancedSplinesComponent",
 			//"SignificanceISPC"
 		});

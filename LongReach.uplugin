@@ -1,15 +1,15 @@
 {
 	"FileVersion": 3,
-	"Version": 1,
-	"VersionName": "1.0.0",
-	"FriendlyName": "LongReach",
+	"Version": 0,
+	"VersionName": "0.1.0",
+	"FriendlyName": "Long Reach",
 	"Description": "Extend your reach!",
 	"Category": "Modding",
 	"CreatedBy": "Epp",
 	"CreatedByURL": "",
 	"DocsURL": "",
 	"MarketplaceURL": "",
-	"SupportURL": "",
+	"SupportURL": "https://github.com/Epp-s-Satisfactory-Mods/LongReach/issues",
 	"CanContainContent": true,
 	"IsBetaVersion": false,
 	"IsExperimentalVersion": false,
@@ -28,6 +28,6 @@
 			"SemVersion": "^3.9.1"
 		}
 	],
-	"SemVersion": "1.0.0",
+	"SemVersion": "0.1.0",
 	"GameVersion": ">=383729"
 }

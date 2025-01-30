@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "LongReachRootWorldModule.h"
 #include "Module/GameInstanceModule.h"
 
 #include "LongReachRootInstanceModule.generated.h"
@@ -9,14 +10,21 @@ UCLASS()
 class LONGREACH_API ULongReachRootInstanceModule : public UGameInstanceModule
 {
     GENERATED_BODY()
+
 public:
-    ULongReachRootInstanceModule()
-        : UGameInstanceModule()
+    void DispatchLifecycleEvent(ELifecyclePhase phase) override;
+    static void RegisterModHooks();
+
+    static ULongReachRootWorldModule* GetGameWorldModule()
     {
-        this->OverrideBuildSampleDistanceOnNextCall = false;
+        return CurrentGameWorldModule;
     }
 
-    void DispatchLifecycleEvent(ELifecyclePhase phase) override;
+    static void SetGameWorldModule(ULongReachRootWorldModule* module)
+    {
+        CurrentGameWorldModule = module;
+    }
 
-    bool OverrideBuildSampleDistanceOnNextCall;
+protected:
+    static ULongReachRootWorldModule* CurrentGameWorldModule;
 };
