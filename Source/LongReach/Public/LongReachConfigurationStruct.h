@@ -10,16 +10,18 @@ struct FLongReachConfigurationStruct {
     GENERATED_BODY()
 public:
     UPROPERTY(BlueprintReadWrite)
-    float UseDistanceInMeters{};
+    float InteractDistanceInMeters{};
 
     UPROPERTY(BlueprintReadWrite)
-    float BuildOrSampleDistanceInMeters{};
+    float PickupDistanceInMeters{};
 
-    inline static FConfigId ConfigId{ "LongReach", "" };
+    UPROPERTY(BlueprintReadWrite)
+    float ConstructionDistanceInMeters{};
 
     /* Retrieves active configuration value and returns object of this struct containing it */
     static FLongReachConfigurationStruct GetActiveConfig(UObject* WorldContext) {
         FLongReachConfigurationStruct ConfigStruct{};
+        FConfigId ConfigId{"LongReach", ""};
         if (const UWorld* World = GEngine->GetWorldFromContextObject(WorldContext, EGetWorldErrorMode::ReturnNull)) {
             UConfigManager* ConfigManager = World->GetGameInstance()->GetSubsystem<UConfigManager>();
             ConfigManager->FillConfigurationStruct(ConfigId, FDynamicStructInfo{FLongReachConfigurationStruct::StaticStruct(), &ConfigStruct});

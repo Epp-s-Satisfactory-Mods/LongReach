@@ -4,76 +4,73 @@
 #include "Configuration/ModConfiguration.h"
 #include "FGCharacterPlayer.h"
 #include "FGPlayerController.h"
+#include "LongReachDebugging.h"
+#include "LongReachDebugSettings.h"
 #include "LongReachLogMacros.h"
 #include "LongReachRootInstanceModule.h"
 
-float ULongReachRootWorldModule::GetPlayerUseDistanceInCM(const AFGCharacterPlayer* player)
+#ifdef LR_DEBUGGING_ENABLED
+#define LR_DUMP_PLAYER_CONFIG_NOT_FOUND( PREFIX, PLAYER, MAP ) \
+    LR_LOG("%s: No config found for player!", *FString(PREFIX));\
+    LongReachDebugging::DumpPlayer( PREFIX, PLAYER ); \
+    LongReachDebugging::DumpConfigMap( PREFIX, MAP);
+#else
+#define LR_DUMP_PLAYER_CONFIG_NOT_FOUND( PREFIX, MAP )
+#endif
+
+void ULongReachRootWorldModule::GetPlayerUseDistances(
+    const AFGCharacterPlayer* player,
+    float& interactDistanceInCM,
+    float& pickupDistanceInCM)
 {
     auto config = this->ConfigByPlayer.Find(player);
 
     if (!config)
     {
-        LR_LOG("ULongReachRootWorldModule::GetPlayerBuildOrSampleDistanceInCM: No config found for player %s (%d)",
-            *player->GetPlayerState()->GetPlayerName(),
-            player->GetPlayerState()->GetPlayerId());
-
-        for (auto& kvp : this->ConfigByPlayer)
-        {
-            LR_LOG("ULongReachRootWorldModule::GetPlayerBuildOrSampleDistanceInCM: Config for player %s (%d): UseDistanceInMeters: %f, BuildOrSampleDistanceInMeters: %f",
-                *kvp.Key->GetPlayerState()->GetPlayerName(),
-                kvp.Key->GetPlayerState()->GetPlayerId(),
-                kvp.Value.UseDistanceInCM,
-                kvp.Value.BuildOrSampleDistanceInCM);
-        }
+        LR_DUMP_PLAYER_CONFIG_NOT_FOUND(TEXT("ULongReachRootWorldModule::GetPlayerUseDistances"), player, this->ConfigByPlayer);
 
         // Return unmodded default
-        return 450.0;
+        interactDistanceInCM = pickupDistanceInCM = 450.0f;
+        return;
     }
 
-    //LR_LOG("ULongReachRootWorldModule::GetPlayerUseDistanceInCM: Returning config value: %f.", config->UseDistanceInCM);
-
-    return config->UseDistanceInCM;
+    interactDistanceInCM = config->InteractDistanceInCM;
+    pickupDistanceInCM = config->PickupDistanceInCM;
 }
 
-float ULongReachRootWorldModule::GetPlayerBuildOrSampleDistanceInCM(const AFGCharacterPlayer* player)
+float ULongReachRootWorldModule::GetPlayerConstructionDistanceInCM(const AFGCharacterPlayer* player)
 {
+    LR_LOG("ULongReachRootWorldModule::GetPlGetPlayerConstructionDistanceInCMayerUseDistances. Player: %p", player);
+    LR_LOG("ULongReachRootWorldModule::GetPlayerConstructionDistanceInCM. Player is valid: %d", IsValid(player));
     auto config = this->ConfigByPlayer.Find(player);
 
+    LR_LOG("ULongReachRootWorldModule::GetPlayerConstructionDistanceInCM. Config: %p", config);
     if (!config)
     {
-        LR_LOG("ULongReachRootWorldModule::GetPlayerBuildOrSampleDistanceInCM: No config found for player %s (%d)",
-            *player->GetPlayerState()->GetPlayerName(),
-            player->GetPlayerState()->GetPlayerId());
-
-        for (auto& kvp : this->ConfigByPlayer)
-        {
-            LR_LOG("ULongReachRootWorldModule::GetPlayerBuildOrSampleDistanceInCM: Config for player %s (%d): UseDistanceInMeters: %f, BuildOrSampleDistanceInMeters: %f",
-                *kvp.Key->GetPlayerState()->GetPlayerName(),
-                kvp.Key->GetPlayerState()->GetPlayerId(),
-                kvp.Value.UseDistanceInCM,
-                kvp.Value.BuildOrSampleDistanceInCM);
-        }
+        LR_DUMP_PLAYER_CONFIG_NOT_FOUND(TEXT("ULongReachRootWorldModule::GetPlayerConstructionDistanceInCM"), player, this->ConfigByPlayer);
 
         // Return unmodded default
-        return 10000.0;
+        return 1000.0;
     }
 
-    //LR_LOG("ULongReachRootWorldModule::GetPlayerBuildOrSampleDistanceInCM: Returning config value: %f.", config->BuildOrSampleDistanceInCM);
+    //LR_LOG("ULongReachRootWorldModule::GetPlayerConstructionDistanceInCM: Returning config value: %f.", config->InteractDistanceInCM);
 
-    return config->BuildOrSampleDistanceInCM;
+    return config->ConstructionDistanceInCM;
 }
 
 void ULongReachRootWorldModule::SetConfig(AFGCharacterPlayer* player, FLongReachConfigurationStruct config)
 {
-    LR_LOG("ULongReachRootWorldModule::SetConfig: Setting config for player %s (%d). UseDistanceInMeters: %f, BuildOrSampleDistanceInMeters: %f",
+    LR_LOG("ULongReachRootWorldModule::SetConfig: Setting config for player %s (%d). InteractDistanceInMeters: %f, PickupDistanceInMeters: %f, ConstructionDistanceInMeters: %f",
         *player->GetPlayerState()->GetPlayerName(),
         player->GetPlayerState()->GetPlayerId(),
-        config.UseDistanceInMeters,
-        config.BuildOrSampleDistanceInMeters);
+        config.InteractDistanceInMeters,
+        config.PickupDistanceInMeters,
+        config.ConstructionDistanceInMeters);
 
     auto configInCM = FLongReachConfigInCM();
-    configInCM.UseDistanceInCM = config.UseDistanceInMeters * 100;
-    configInCM.BuildOrSampleDistanceInCM = config.BuildOrSampleDistanceInMeters * 100;
+    configInCM.InteractDistanceInCM = config.InteractDistanceInMeters * 100;
+    configInCM.PickupDistanceInCM = config.PickupDistanceInMeters * 100;
+    configInCM.ConstructionDistanceInCM = config.ConstructionDistanceInMeters * 100;
 
     this->ConfigByPlayer.Emplace(player, configInCM);
 }
@@ -127,7 +124,7 @@ void ULongReachRootWorldModule::DispatchLifecycleEvent(ELifecyclePhase phase)
             LR_LOG("ULongReachRootWorldModule::DispatchLifecycleEvent: Subscribing to config updates...");
             auto gameInstance = this->GetWorld()->GetGameInstance();
             auto configManager = gameInstance->GetSubsystem<UConfigManager>();
-            auto modConfigRoot = configManager->GetConfigurationRootSection(FLongReachConfigurationStruct::ConfigId);
+            auto modConfigRoot = configManager->GetConfigurationRootSection(ConfigId);
 
             for (auto& sectionProperty : modConfigRoot->SectionProperties)
             {
@@ -136,7 +133,9 @@ void ULongReachRootWorldModule::DispatchLifecycleEvent(ELifecyclePhase phase)
 
                 LR_LOG("ULongReachRootWorldModule::DispatchLifecycleEvent: Examining config property %s", *propertyName);
 
-                if (propertyName.Equals(TEXT("UseDistanceInMeters")) || propertyName.Equals(TEXT("BuildOrSampleDistanceInMeters")))
+                if (propertyName.Equals(TEXT("InteractDistanceInMeters")) ||
+                    propertyName.Equals(TEXT("PickupDistanceInMeters")) ||
+                    propertyName.Equals(TEXT("ConstructionDistanceInMeters")) )
                 {
                     LR_LOG("ULongReachRootWorldModule::DispatchLifecycleEvent: \tSubscribing to changes on %s, property at %p!", *propertyName, configProperty);
                     configProperty->OnPropertyValueChanged.AddDynamic(this, &ULongReachRootWorldModule::UpdateConfig);
@@ -148,3 +147,5 @@ void ULongReachRootWorldModule::DispatchLifecycleEvent(ELifecyclePhase phase)
 
     Super::DispatchLifecycleEvent(phase);
 }
+
+#undef LR_DUMP_PLAYER_CONFIG_NOT_FOUND

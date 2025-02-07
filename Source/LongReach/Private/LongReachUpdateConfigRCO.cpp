@@ -2,6 +2,8 @@
 
 #include "FGCharacterPlayer.h"
 #include "FGPlayerController.h"
+#include "LongReachDebugging.h"
+#include "LongReachDebugSettings.h"
 #include "LongReachLogMacros.h"
 #include "LongReachRootInstanceModule.h"
 #include "LongReachRootWorldModule.h"
@@ -16,11 +18,10 @@ void ULongReachUpdateConfigRCO::GetLifetimeReplicatedProps(TArray<FLifetimePrope
 
 void ULongReachUpdateConfigRCO::SetConfig_Server_Implementation(AFGCharacterPlayer* player, FLongReachConfigurationStruct config)
 {
-    LR_LOG("ULongReachUpdateConfigRCO::SetConfig_Server_Implementation: Setting config for player %s (%d). UseDistanceInMeters: %f, BuildOrSampleDistanceInMeters: %f",
-        *player->GetPlayerState()->GetPlayerName(),
-        player->GetPlayerState()->GetPlayerId(),
-        config.UseDistanceInMeters,
-        config.BuildOrSampleDistanceInMeters);
+#if LR_DEBUGGING_ENABLED
+    LongReachDebugging::DumpPlayer("ULongReachUpdateConfigRCO::SetConfig_Server_Implementation", player);
+    LongReachDebugging::DumpConfigStruct("ULongReachUpdateConfigRCO::SetConfig_Server_Implementation", config);
+#endif
 
     ULongReachRootInstanceModule::GetGameWorldModule()->SetConfig(player, config);
 }

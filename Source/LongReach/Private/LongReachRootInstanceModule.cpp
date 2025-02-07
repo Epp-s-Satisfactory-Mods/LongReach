@@ -4,8 +4,10 @@
 #include "AbstractInstanceManager.h"
 #include "Configuration/ConfigManager.h"
 #include "Configuration/ModConfiguration.h"
+#include "FGBuildableConveyorBelt.h"
 #include "FGBuildGun.h"
-#include "FGCharacterPlayer.h"
+#include "FGDropPod.h"
+#include "FGInteractActor.h"
 #include "FGPlayerState.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Patching/NativeHookManager.h"
@@ -40,17 +42,68 @@ void ULongReachRootInstanceModule::RegisterModHooks()
             });
     }
 
-    SUBSCRIBE_UOBJECT_METHOD(AFGCharacterPlayer, GetUseDistance, [](auto& scope, const AFGCharacterPlayer* self)
+    SUBSCRIBE_UOBJECT_METHOD(AFGCharacterPlayer, UpdateBestUsableActor, [](auto& scope, AFGCharacterPlayer* self)
         {
-            //LR_LOG("AFGCharacterPlayer::GetUseDistance START %s", *self->GetName());
-            auto useDistance = scope(self);
-            //LR_LOG("AFGCharacterPlayer::GetUseDistance: Normal distance: %f", useDistance);
+            LR_LOG("AFGCharacterPlayer::UpdateBestUsableActor: START");
             auto worldModule = ULongReachRootInstanceModule::GetGameWorldModule();
-            auto configuredUseDistance = worldModule->GetPlayerUseDistanceInCM(self);
-            useDistance = FMath::Max(useDistance, configuredUseDistance);
-            //LR_LOG("AFGCharacterPlayer::GetUseDistance END: Overriding with distance: %f", useDistance);
-            scope.Override(useDistance);
-            return useDistance;
+            float interactDistanceInCM;
+            float pickupDistanceInCM;
+            worldModule->GetPlayerUseDistances(self, interactDistanceInCM, pickupDistanceInCM);
+            float maxUseDistanceInCM = FMath::Max(interactDistanceInCM, pickupDistanceInCM);
+
+            LR_LOG("AFGCharacterPlayer::UpdateBestUsableActor: interactDistanceInCM: %f, pickupDistanceInCM: %f, maxUseDistanceInCM: %f", interactDistanceInCM, pickupDistanceInCM, maxUseDistanceInCM);
+            self->mUseDistance = maxUseDistanceInCM;
+            scope(self);
+
+            if (!self->mBestUsableActor || FMath::IsNearlyEqual(interactDistanceInCM, pickupDistanceInCM, 50.0))
+            {
+                LR_LOG("AFGCharacterPlayer::UpdateBestUsableActor: No best usable actor or distances are roughly the same!");
+                return;
+            }
+
+            LR_LOG("AFGCharacterPlayer::UpdateBestUsableActor: mBestUsableActor: %s", *self->mBestUsableActor->GetName());
+
+            FVector eyesLocation;
+            FRotator eyesRotator;
+            self->GetActorEyesViewPoint(eyesLocation, eyesRotator);
+
+            auto cachedUseState = self->GetCachedUseState();
+            auto distanceSqFromCharacter = FVector::DistSquared(eyesLocation, cachedUseState->UseLocation);
+
+            auto useInteractDistance =
+                // Buildables use the interact distance EXCEPT for conveyor belts, because the only interaction is picking things up
+                (self->mBestUsableActor->IsA(AFGBuildable::StaticClass()) && !self->mBestUsableActor->IsA(AFGBuildableConveyorBelt::StaticClass()))
+                // For dismantle crates and decoration actors
+                || self->mBestUsableActor->IsA(AFGInteractActor::StaticClass())
+                // Drop pods are interactable too
+                || self->mBestUsableActor->IsA(AFGDropPod::StaticClass());
+
+            if (useInteractDistance)
+            {
+                self->mUseDistance = interactDistanceInCM;
+                auto effectiveUseDistanceSq = FMath::Square(self->GetUseDistance());
+
+                LR_LOG("AFGCharacterPlayer::UpdateBestUsableActor: Is interactable!");
+                if (effectiveUseDistanceSq < distanceSqFromCharacter)
+                {
+                    // Rescan using the closer overrideDistance
+                    LR_LOG("AFGCharacterPlayer::UpdateBestUsableActor: effectiveUseDistanceSq < distanceSqFromCharacter. Rescanning with mUseDistance %f", self->mUseDistance);
+                    scope(self);
+                }
+            }
+            else
+            {
+                LR_LOG("AFGCharacterPlayer::UpdateBestUsableActor: Is pickupable!");
+                self->mUseDistance = pickupDistanceInCM;
+                auto effectivePickupDistanceSq = FMath::Square(self->GetUseDistance());
+                if (effectivePickupDistanceSq < distanceSqFromCharacter)
+                {
+                    LR_LOG("AFGCharacterPlayer::UpdateBestUsableActor: effectivePickupDistanceSq < distanceSqFromCharacter. Rescanning with mUseDistance %f", self->mUseDistance);
+                    scope(self);
+                }
+            }
+            LR_LOG("AFGCharacterPlayer::UpdateBestUsableActor: mBestUsableActor NOW: %p", self->mBestUsableActor);
+            LR_LOG("AFGCharacterPlayer::UpdateBestUsableActor END");
         });
 
     SUBSCRIBE_UOBJECT_METHOD(AFGBuildGun, TraceForBuilding, [&](auto& scope, const AFGBuildGun* self, APawn* owningPawn, FHitResult& hitresult)
@@ -59,24 +112,24 @@ void ULongReachRootInstanceModule::RegisterModHooks()
             {
                 auto worldModule = ULongReachRootInstanceModule::GetGameWorldModule();
                 auto selfMutable = const_cast<AFGBuildGun*>(self);
-                selfMutable->mBuildDistanceMax = worldModule->GetPlayerBuildOrSampleDistanceInCM(owningCharacter);
+                selfMutable->mBuildDistanceMax = worldModule->GetPlayerConstructionDistanceInCM(owningCharacter);
             }
             scope(self, owningPawn, hitresult);
         });
 
     SUBSCRIBE_UOBJECT_METHOD(UFGBuildGunState, GetBuildGunRangeOverride, [&](auto& scope, UFGBuildGunState* self)
         {
-            auto distance = scope(self);
-            if (distance > -1 && self->GetBuildGun()->mPlayerCharacter)
+            auto overrideDistance = scope(self);
+            if (overrideDistance > -1 && self->GetBuildGun()->mPlayerCharacter)
             {
-                LR_LOG("UFGBuildGunState::GetBuildGunRangeOverride: Unmodded distance: %f", distance);
+                LR_LOG("UFGBuildGunState::GetBuildGunRangeOverride: Unmodded overrideDistance: %f", overrideDistance);
                 auto worldModule = ULongReachRootInstanceModule::GetGameWorldModule();
-                auto configuredDistance = worldModule->GetPlayerBuildOrSampleDistanceInCM(self->GetBuildGun()->mPlayerCharacter);
-                distance = FMath::Max(distance, configuredDistance);
-                LR_LOG("UFGBuildGunState::GetBuildGunRangeOverride: Setting to distance: %f", distance);
-                scope.Override(distance);
+                auto modConfiguredDistance = worldModule->GetPlayerConstructionDistanceInCM(self->GetBuildGun()->mPlayerCharacter);
+                overrideDistance = FMath::Max(overrideDistance, modConfiguredDistance);
+                LR_LOG("UFGBuildGunState::GetBuildGunRangeOverride: Setting to overrideDistance: %f", overrideDistance);
+                scope.Override(overrideDistance);
             }
-            return distance;
+            return overrideDistance;
         });
 
     if (LR_DEBUGGING_ENABLED)
@@ -93,11 +146,6 @@ void ULongReachRootInstanceModule::RegisterModHooks()
                     auto playerLocation = instigatorCharactor->GetRealActorLocation();
                     auto distance = FVector::Distance(playerLocation, hitResult.Location);
                     LR_LOG("UFGBuildGunState::BuildSamplePressed_Implementation. Hit result distance from player: %f", distance);
-
-                    auto worldModule = ULongReachRootInstanceModule::GetGameWorldModule();
-                    LR_LOG("UFGBuildGunState::BuildSamplePressed_Implementation: Current config: UseDistanceInCM: %f, BuildOrSampleDistanceInCM: %f",
-                        worldModule->GetPlayerUseDistanceInCM(instigatorCharactor),
-                        worldModule->GetPlayerBuildOrSampleDistanceInCM(instigatorCharactor));
                 }
                 else
                 {
