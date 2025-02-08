@@ -9,13 +9,13 @@
 #include "LongReachLogMacros.h"
 #include "LongReachRootInstanceModule.h"
 
-#ifdef LR_DEBUGGING_ENABLED
+#if LR_DEBUGGING_ENABLED
 #define LR_DUMP_PLAYER_CONFIG_NOT_FOUND( PREFIX, PLAYER, MAP ) \
     LR_LOG("%s: No config found for player!", *FString(PREFIX));\
     LongReachDebugging::DumpPlayer( PREFIX, PLAYER ); \
     LongReachDebugging::DumpConfigMap( PREFIX, MAP);
 #else
-#define LR_DUMP_PLAYER_CONFIG_NOT_FOUND( PREFIX, MAP )
+#define LR_DUMP_PLAYER_CONFIG_NOT_FOUND( PREFIX, PLAYER, MAP )
 #endif
 
 void ULongReachRootWorldModule::GetPlayerUseDistances(

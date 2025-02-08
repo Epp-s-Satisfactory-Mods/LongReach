@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
 	"Version": 0,
-	"VersionName": "0.2.0",
+	"VersionName": "0.2.1",
 	"FriendlyName": "Long Reach",
 	"Description": "Extend your reach!",
 	"Category": "Modding",
@@ -28,6 +28,6 @@
 			"SemVersion": "^3.9.1"
 		}
 	],
-	"SemVersion": "0.2.0",
+	"SemVersion": "0.2.1",
 	"GameVersion": ">=383729"
 }

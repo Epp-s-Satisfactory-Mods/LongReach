@@ -4,7 +4,7 @@
 #include "AbstractInstanceManager.h"
 #include "Configuration/ConfigManager.h"
 #include "Configuration/ModConfiguration.h"
-#include "FGBuildableConveyorBelt.h"
+#include "FGBuildableConveyorBase.h"
 #include "FGBuildGun.h"
 #include "FGDropPod.h"
 #include "FGInteractActor.h"
@@ -71,8 +71,8 @@ void ULongReachRootInstanceModule::RegisterModHooks()
             auto distanceSqFromCharacter = FVector::DistSquared(eyesLocation, cachedUseState->UseLocation);
 
             auto useInteractDistance =
-                // Buildables use the interact distance EXCEPT for conveyor belts, because the only interaction is picking things up
-                (self->mBestUsableActor->IsA(AFGBuildable::StaticClass()) && !self->mBestUsableActor->IsA(AFGBuildableConveyorBelt::StaticClass()))
+                // Buildables use the interact distance EXCEPT for conveyor belts/lifts, because the only interaction is picking things up
+                (self->mBestUsableActor->IsA(AFGBuildable::StaticClass()) && !self->mBestUsableActor->IsA(AFGBuildableConveyorBase::StaticClass()))
                 // For dismantle crates and decoration actors
                 || self->mBestUsableActor->IsA(AFGInteractActor::StaticClass())
                 // Drop pods are interactable too
