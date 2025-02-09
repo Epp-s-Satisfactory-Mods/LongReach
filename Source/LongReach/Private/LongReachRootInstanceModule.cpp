@@ -32,23 +32,32 @@ void ULongReachRootInstanceModule::RegisterModHooks()
 
     if (!IsRunningDedicatedServer())
     {
-        SUBSCRIBE_UOBJECT_METHOD(AFGCharacterPlayer, BeginPlay, [](auto& scope, AFGCharacterPlayer* self)
+        SUBSCRIBE_UOBJECT_METHOD(AFGPlayerController, BeginPlay, [](auto& scope, AFGPlayerController* self)
             {
-                LR_LOG("AFGCharacterPlayer::BeginPlay START %s", *self->GetName());
+                LR_LOG("AFGPlayerController::BeginPlay START %s", *self->GetName());
+                scope(self);
                 auto worldModule = ULongReachRootInstanceModule::GetGameWorldModule();
                 worldModule->UpdateConfig();
-                scope(self);
-                LR_LOG("AFGCharacterPlayer::BeginPlay END");
+                LR_LOG("AFGPlayerController::BeginPlay END");
             });
     }
 
     SUBSCRIBE_UOBJECT_METHOD(AFGCharacterPlayer, UpdateBestUsableActor, [](auto& scope, AFGCharacterPlayer* self)
         {
             LR_LOG("AFGCharacterPlayer::UpdateBestUsableActor: START");
+
+            auto playerController = self->GetFGPlayerController();
+            if (!playerController)
+            {
+                LR_LOG("AFGCharacterPlayer::UpdateBestUsableActor: AFGCharacterPlayer has no player controller??");
+                scope(self);
+                return;
+            }
+
             auto worldModule = ULongReachRootInstanceModule::GetGameWorldModule();
             float interactDistanceInCM;
             float pickupDistanceInCM;
-            worldModule->GetPlayerUseDistances(self, interactDistanceInCM, pickupDistanceInCM);
+            worldModule->GetPlayerUseDistances(playerController, interactDistanceInCM, pickupDistanceInCM);
             float maxUseDistanceInCM = FMath::Max(interactDistanceInCM, pickupDistanceInCM);
 
             LR_LOG("AFGCharacterPlayer::UpdateBestUsableActor: interactDistanceInCM: %f, pickupDistanceInCM: %f, maxUseDistanceInCM: %f", interactDistanceInCM, pickupDistanceInCM, maxUseDistanceInCM);
@@ -110,9 +119,12 @@ void ULongReachRootInstanceModule::RegisterModHooks()
         {
             if (auto owningCharacter = Cast<AFGCharacterPlayer>(owningPawn))
             {
-                auto worldModule = ULongReachRootInstanceModule::GetGameWorldModule();
-                auto selfMutable = const_cast<AFGBuildGun*>(self);
-                selfMutable->mBuildDistanceMax = worldModule->GetPlayerConstructionDistanceInCM(owningCharacter);
+                if (auto playerController = owningCharacter->GetFGPlayerController())
+                {
+                    auto worldModule = ULongReachRootInstanceModule::GetGameWorldModule();
+                    auto selfMutable = const_cast<AFGBuildGun*>(self);
+                    selfMutable->mBuildDistanceMax = worldModule->GetPlayerConstructionDistanceInCM(playerController);
+                }
             }
             scope(self, owningPawn, hitresult);
         });
@@ -122,12 +134,15 @@ void ULongReachRootInstanceModule::RegisterModHooks()
             auto overrideDistance = scope(self);
             if (overrideDistance > -1 && self->GetBuildGun()->mPlayerCharacter)
             {
-                LR_LOG("UFGBuildGunState::GetBuildGunRangeOverride: Unmodded overrideDistance: %f", overrideDistance);
-                auto worldModule = ULongReachRootInstanceModule::GetGameWorldModule();
-                auto modConfiguredDistance = worldModule->GetPlayerConstructionDistanceInCM(self->GetBuildGun()->mPlayerCharacter);
-                overrideDistance = FMath::Max(overrideDistance, modConfiguredDistance);
-                LR_LOG("UFGBuildGunState::GetBuildGunRangeOverride: Setting to overrideDistance: %f", overrideDistance);
-                scope.Override(overrideDistance);
+                if (auto playerController = self->GetBuildGun()->mPlayerCharacter->GetFGPlayerController())
+                {
+                    LR_LOG("UFGBuildGunState::GetBuildGunRangeOverride: Unmodded overrideDistance: %f", overrideDistance);
+                    auto worldModule = ULongReachRootInstanceModule::GetGameWorldModule();
+                    auto modConfiguredDistance = worldModule->GetPlayerConstructionDistanceInCM(playerController);
+                    overrideDistance = FMath::Max(overrideDistance, modConfiguredDistance);
+                    LR_LOG("UFGBuildGunState::GetBuildGunRangeOverride: Setting to overrideDistance: %f", overrideDistance);
+                    scope.Override(overrideDistance);
+                }
             }
             return overrideDistance;
         });

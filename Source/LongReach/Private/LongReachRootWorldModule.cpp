@@ -2,7 +2,7 @@
 
 #include "Configuration/ConfigManager.h"
 #include "Configuration/ModConfiguration.h"
-#include "FGCharacterPlayer.h"
+//#include "FGCharacterPlayer.h"
 #include "FGPlayerController.h"
 #include "LongReachDebuggingMacros.h"
 #include "LongReachDebugSettings.h"
@@ -10,19 +10,19 @@
 #include "LongReachRootInstanceModule.h"
 
 void ULongReachRootWorldModule::GetPlayerUseDistances(
-    const AFGCharacterPlayer* player,
+    const AFGPlayerController* playerController,
     float& interactDistanceInCM,
     float& pickupDistanceInCM)
 {
-    auto config = this->ConfigByPlayer.Find(player);
+    auto config = this->ConfigByPlayerController.Find(playerController);
 
     if (!config)
     {
-        LR_DUMP_PLAYER_AND_CONFIG_MAP(
+        LR_DUMP_PLAYER_CONTROLLER_AND_CONFIG_MAP(
             TEXT("ULongReachRootWorldModule::GetPlayerUseDistances"),
-            TEXT("No config found for player!"),
-            player,
-            this->ConfigByPlayer);
+            TEXT("No config found for player controller!"),
+            playerController,
+            this->ConfigByPlayerController);
 
         // Return unmodded default
         interactDistanceInCM = pickupDistanceInCM = 450.0f;
@@ -33,18 +33,18 @@ void ULongReachRootWorldModule::GetPlayerUseDistances(
     pickupDistanceInCM = config->PickupDistanceInCM;
 }
 
-float ULongReachRootWorldModule::GetPlayerConstructionDistanceInCM(const AFGCharacterPlayer* player)
+float ULongReachRootWorldModule::GetPlayerConstructionDistanceInCM(const AFGPlayerController* playerController)
 {
-    auto config = this->ConfigByPlayer.Find(player);
+    auto config = this->ConfigByPlayerController.Find(playerController);
 
     LR_LOG("ULongReachRootWorldModule::GetPlayerConstructionDistanceInCM. Config: %p", config);
     if (!config)
     {
-        LR_DUMP_PLAYER_AND_CONFIG_MAP(
+        LR_DUMP_PLAYER_CONTROLLER_AND_CONFIG_MAP(
             TEXT("ULongReachRootWorldModule::GetPlayerConstructionDistanceInCM"),
-            TEXT("No config found for player!"),
-            player,
-            this->ConfigByPlayer);
+            TEXT("No config found for playerController!"),
+            playerController,
+            this->ConfigByPlayerController);
 
         // Return unmodded default
         return 1000.0;
@@ -55,9 +55,9 @@ float ULongReachRootWorldModule::GetPlayerConstructionDistanceInCM(const AFGChar
     return config->ConstructionDistanceInCM;
 }
 
-void ULongReachRootWorldModule::SetConfig(AFGCharacterPlayer* player, FLongReachConfigurationStruct config)
+void ULongReachRootWorldModule::SetConfig(AFGPlayerController* playerController, FLongReachConfigurationStruct config)
 {
-    LR_DUMP_PLAYER(TEXT("ULongReachRootWorldModule::SetConfig"), player);
+    LR_DUMP_PLAYER_CONTROLLER(TEXT("ULongReachRootWorldModule::SetConfig"), playerController);
     LR_DUMP_CONFIG_STRUCT(TEXT("ULongReachRootWorldModule::SetConfig"), config);
 
     auto configInCM = FLongReachConfigInCM();
@@ -65,7 +65,7 @@ void ULongReachRootWorldModule::SetConfig(AFGCharacterPlayer* player, FLongReach
     configInCM.PickupDistanceInCM = config.PickupDistanceInMeters * 100;
     configInCM.ConstructionDistanceInCM = config.ConstructionDistanceInMeters * 100;
 
-    this->ConfigByPlayer.Emplace(player, configInCM);
+    this->ConfigByPlayerController.Emplace(playerController, configInCM);
 }
 
 void ULongReachRootWorldModule::UpdateConfig()
@@ -80,15 +80,14 @@ void ULongReachRootWorldModule::UpdateConfig()
     LR_LOG("ULongReachRootWorldModule::UpdateConfig: Retrieving active mod config...");
     auto config = FLongReachConfigurationStruct::GetActiveConfig(this->GetWorld());
 
-    if (!IsValid(this->Player))
+    if (!IsValid(this->PlayerController))
     {
-        LR_LOG("ULongReachRootWorldModule::UpdateConfig: Initializing Player reference...");
-        auto firstPlayerController = Cast<AFGPlayerController>(this->GetWorld()->GetFirstPlayerController());
-        this->Player = Cast<AFGCharacterPlayer>(firstPlayerController->GetControlledCharacter());
+        LR_LOG("ULongReachRootWorldModule::UpdateConfig: Initializing PlayerController reference...");
+        this->PlayerController = Cast<AFGPlayerController>(this->GetWorld()->GetFirstPlayerController());
     }
 
     LR_LOG("ULongReachRootWorldModule::UpdateConfig: Retrieved config. Setting locally.");
-    this->SetConfig(this->Player, config);
+    this->SetConfig(this->PlayerController, config);
 
     if (this->GetWorld()->GetNetMode() < ENetMode::NM_Client)
     {
@@ -99,12 +98,11 @@ void ULongReachRootWorldModule::UpdateConfig()
     if (!IsValid(this->UpdateConfigRCO))
     {
         LR_LOG("ULongReachRootWorldModule::UpdateConfig: Initializing RCO...");
-        auto firstPlayerController = Cast<AFGPlayerController>(this->GetWorld()->GetFirstPlayerController());
-        this->UpdateConfigRCO = firstPlayerController->GetRemoteCallObjectOfClass<ULongReachUpdateConfigRCO>();
+        this->UpdateConfigRCO = this->PlayerController->GetRemoteCallObjectOfClass<ULongReachUpdateConfigRCO>();
     }
 
     LR_LOG("ULongReachRootWorldModule::UpdateConfig: Sending config to server.");
-    this->UpdateConfigRCO->SetConfig_Server(this->Player, config);
+    this->UpdateConfigRCO->SetConfig_Server(this->PlayerController, config);
 }
 
 void ULongReachRootWorldModule::DispatchLifecycleEvent(ELifecyclePhase phase)

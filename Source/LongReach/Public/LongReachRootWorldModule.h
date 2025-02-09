@@ -1,12 +1,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "FGPlayerController.h"
 #include "LongReachConfigInCM.h"
 #include "LongReachConfigurationStruct.h"
 #include "LongReachUpdateConfigRCO.h"
 #include "LongReachLogMacros.h"
 #include "ModConfiguration.h"
 #include "Module/GameWorldModule.h"
+
 #include "LongReachRootWorldModule.generated.h"
 
 UCLASS()
@@ -16,15 +18,15 @@ class LONGREACH_API ULongReachRootWorldModule : public UGameWorldModule
 
 public:
     void GetPlayerUseDistances(
-        const AFGCharacterPlayer* player,
+        const AFGPlayerController* player,
         float& useDistanceInCM,
         float& pickupDistanceInCM);
 
-    float GetPlayerConstructionDistanceInCM(const AFGCharacterPlayer* player);
+    float GetPlayerConstructionDistanceInCM(const AFGPlayerController* player);
 
     inline static FConfigId ConfigId{ "LongReach", "" };
 
-    void SetConfig(AFGCharacterPlayer* player, FLongReachConfigurationStruct config);
+    void SetConfig(AFGPlayerController* player, FLongReachConfigurationStruct config);
 
     UFUNCTION() // This must be a UFUNCTION so it can subscribe to config update broadcasts
     void UpdateConfig();
@@ -36,7 +38,7 @@ protected:
     ULongReachUpdateConfigRCO* UpdateConfigRCO;
 
     UPROPERTY()
-    AFGCharacterPlayer* Player;
+    AFGPlayerController* PlayerController;
 
-    TMap<AFGCharacterPlayer*, FLongReachConfigInCM> ConfigByPlayer;
+    TMap<AFGPlayerController*, FLongReachConfigInCM> ConfigByPlayerController;
 };

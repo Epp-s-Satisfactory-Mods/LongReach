@@ -1,10 +1,11 @@
 #include "LongReachDebugging.h"
 
 #include "FGCharacterPlayer.h"
+#include "FGPlayerController.h"
 #include "FGPlayerState.h"
 #include "LongReachLogMacros.h"
 
-void LongReachDebugging::DumpConfigMap(FString prefix, TMap<AFGCharacterPlayer*, FLongReachConfigInCM>& configByPlayer)
+void LongReachDebugging::DumpConfigMap(FString prefix, TMap<AFGPlayerController*, FLongReachConfigInCM>& configByPlayer)
 {
     EnsureColon(prefix);
 
@@ -12,10 +13,10 @@ void LongReachDebugging::DumpConfigMap(FString prefix, TMap<AFGCharacterPlayer*,
     auto nestedPrefix = GetNestedPrefix(prefix);
     for (auto& kvp : configByPlayer)
     {
-        auto player = kvp.Key;
+        auto playerController = kvp.Key;
         auto& config = kvp.Value;
 
-        DumpPlayer(nestedPrefix, player);
+        DumpPlayerController(nestedPrefix, playerController);
         DumpConfigInCM(nestedPrefix, config);
     }
 }
@@ -26,7 +27,7 @@ void LongReachDebugging::DumpPlayer(FString prefix, const AFGCharacterPlayer* pl
 
     if (!IsValid(player))
     {
-        LR_LOG("%s Player is not valid. Pointer: %p", *prefix, player);
+        LR_LOG("%s AFGCharacterPlayer is not valid. Pointer: %p", *prefix, player);
         return;
     }
 
@@ -34,7 +35,7 @@ void LongReachDebugging::DumpPlayer(FString prefix, const AFGCharacterPlayer* pl
 
     if (!IsValid(playerState))
     {
-        LR_LOG("%s Player %s does not have a valid player state.", *prefix, *player->GetName());
+        LR_LOG("%s AFGCharacterPlayer %s does not have a valid player state.", *prefix, *player->GetName());
         return;
     }
 
@@ -42,6 +43,21 @@ void LongReachDebugging::DumpPlayer(FString prefix, const AFGCharacterPlayer* pl
         *prefix,
         *playerState->GetPlayerName(),
         playerState->GetPlayerId())
+}
+
+void LongReachDebugging::DumpPlayerController(FString prefix, const AFGPlayerController* playerController)
+{
+    EnsureColon(prefix);
+
+    if (!IsValid(playerController))
+    {
+        LR_LOG("%s AFGPlayerController is not valid. Pointer: %p", *prefix, playerController);
+        return;
+    }
+
+    auto player = Cast<AFGCharacterPlayer>(playerController->GetControlledCharacter());
+    auto& nestedPrefix = GetNestedPrefix(prefix).Append("GetControlledCharacter");
+    DumpPlayer(nestedPrefix, player);
 }
 
 void LongReachDebugging::DumpConfigInCM(FString prefix, FLongReachConfigInCM& config)

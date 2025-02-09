@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "FGRemoteCallObject.h"
+#include "FGPlayerController.h"
 #include "LongReachConfigurationStruct.h"
 
 #include "LongReachUpdateConfigRCO.generated.h"
@@ -15,7 +16,7 @@ public:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
     UFUNCTION(Server, Reliable)
-    void SetConfig_Server(AFGCharacterPlayer* player, FLongReachConfigurationStruct config);
+    void SetConfig_Server(AFGPlayerController* playerController, FLongReachConfigurationStruct config);
 
     UPROPERTY(Replicated)
     bool bDummyToForceReplication = true;

@@ -2,8 +2,7 @@
 
 #include "FGCharacterPlayer.h"
 #include "FGPlayerController.h"
-#include "LongReachDebugging.h"
-#include "LongReachDebugSettings.h"
+#include "LongReachDebuggingMacros.h"
 #include "LongReachLogMacros.h"
 #include "LongReachRootInstanceModule.h"
 #include "LongReachRootWorldModule.h"
@@ -16,13 +15,11 @@ void ULongReachUpdateConfigRCO::GetLifetimeReplicatedProps(TArray<FLifetimePrope
     DOREPLIFETIME(ULongReachUpdateConfigRCO, bDummyToForceReplication);
 }
 
-void ULongReachUpdateConfigRCO::SetConfig_Server_Implementation(AFGCharacterPlayer* player, FLongReachConfigurationStruct config)
+void ULongReachUpdateConfigRCO::SetConfig_Server_Implementation(AFGPlayerController* playerController, FLongReachConfigurationStruct config)
 {
-#if LR_DEBUGGING_ENABLED
-    LongReachDebugging::DumpPlayer("ULongReachUpdateConfigRCO::SetConfig_Server_Implementation", player);
-    LongReachDebugging::DumpConfigStruct("ULongReachUpdateConfigRCO::SetConfig_Server_Implementation", config);
-#endif
+    LR_DUMP_PLAYER_CONTROLLER(TEXT("ULongReachUpdateConfigRCO::SetConfig_Server_Implementation"), playerController);
+    LR_DUMP_CONFIG_STRUCT(TEXT("ULongReachUpdateConfigRCO::SetConfig_Server_Implementation"), config);
 
-    ULongReachRootInstanceModule::GetGameWorldModule()->SetConfig(player, config);
+    ULongReachRootInstanceModule::GetGameWorldModule()->SetConfig(playerController, config);
 }
 
