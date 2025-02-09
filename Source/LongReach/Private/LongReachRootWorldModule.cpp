@@ -4,19 +4,10 @@
 #include "Configuration/ModConfiguration.h"
 #include "FGCharacterPlayer.h"
 #include "FGPlayerController.h"
-#include "LongReachDebugging.h"
+#include "LongReachDebuggingMacros.h"
 #include "LongReachDebugSettings.h"
 #include "LongReachLogMacros.h"
 #include "LongReachRootInstanceModule.h"
-
-#if LR_DEBUGGING_ENABLED
-#define LR_DUMP_PLAYER_CONFIG_NOT_FOUND( PREFIX, PLAYER, MAP ) \
-    LR_LOG("%s: No config found for player!", *FString(PREFIX));\
-    LongReachDebugging::DumpPlayer( PREFIX, PLAYER ); \
-    LongReachDebugging::DumpConfigMap( PREFIX, MAP);
-#else
-#define LR_DUMP_PLAYER_CONFIG_NOT_FOUND( PREFIX, PLAYER, MAP )
-#endif
 
 void ULongReachRootWorldModule::GetPlayerUseDistances(
     const AFGCharacterPlayer* player,
@@ -27,7 +18,11 @@ void ULongReachRootWorldModule::GetPlayerUseDistances(
 
     if (!config)
     {
-        LR_DUMP_PLAYER_CONFIG_NOT_FOUND(TEXT("ULongReachRootWorldModule::GetPlayerUseDistances"), player, this->ConfigByPlayer);
+        LR_DUMP_PLAYER_AND_CONFIG_MAP(
+            TEXT("ULongReachRootWorldModule::GetPlayerUseDistances"),
+            TEXT("No config found for player!"),
+            player,
+            this->ConfigByPlayer);
 
         // Return unmodded default
         interactDistanceInCM = pickupDistanceInCM = 450.0f;
@@ -40,14 +35,16 @@ void ULongReachRootWorldModule::GetPlayerUseDistances(
 
 float ULongReachRootWorldModule::GetPlayerConstructionDistanceInCM(const AFGCharacterPlayer* player)
 {
-    LR_LOG("ULongReachRootWorldModule::GetPlGetPlayerConstructionDistanceInCMayerUseDistances. Player: %p", player);
-    LR_LOG("ULongReachRootWorldModule::GetPlayerConstructionDistanceInCM. Player is valid: %d", IsValid(player));
     auto config = this->ConfigByPlayer.Find(player);
 
     LR_LOG("ULongReachRootWorldModule::GetPlayerConstructionDistanceInCM. Config: %p", config);
     if (!config)
     {
-        LR_DUMP_PLAYER_CONFIG_NOT_FOUND(TEXT("ULongReachRootWorldModule::GetPlayerConstructionDistanceInCM"), player, this->ConfigByPlayer);
+        LR_DUMP_PLAYER_AND_CONFIG_MAP(
+            TEXT("ULongReachRootWorldModule::GetPlayerConstructionDistanceInCM"),
+            TEXT("No config found for player!"),
+            player,
+            this->ConfigByPlayer);
 
         // Return unmodded default
         return 1000.0;
@@ -60,12 +57,8 @@ float ULongReachRootWorldModule::GetPlayerConstructionDistanceInCM(const AFGChar
 
 void ULongReachRootWorldModule::SetConfig(AFGCharacterPlayer* player, FLongReachConfigurationStruct config)
 {
-    LR_LOG("ULongReachRootWorldModule::SetConfig: Setting config for player %s (%d). InteractDistanceInMeters: %f, PickupDistanceInMeters: %f, ConstructionDistanceInMeters: %f",
-        *player->GetPlayerState()->GetPlayerName(),
-        player->GetPlayerState()->GetPlayerId(),
-        config.InteractDistanceInMeters,
-        config.PickupDistanceInMeters,
-        config.ConstructionDistanceInMeters);
+    LR_DUMP_PLAYER(TEXT("ULongReachRootWorldModule::SetConfig"), player);
+    LR_DUMP_CONFIG_STRUCT(TEXT("ULongReachRootWorldModule::SetConfig"), config);
 
     auto configInCM = FLongReachConfigInCM();
     configInCM.InteractDistanceInCM = config.InteractDistanceInMeters * 100;
@@ -147,5 +140,3 @@ void ULongReachRootWorldModule::DispatchLifecycleEvent(ELifecyclePhase phase)
 
     Super::DispatchLifecycleEvent(phase);
 }
-
-#undef LR_DUMP_PLAYER_CONFIG_NOT_FOUND
