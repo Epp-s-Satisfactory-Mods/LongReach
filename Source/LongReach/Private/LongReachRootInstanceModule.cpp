@@ -83,9 +83,7 @@ void ULongReachRootInstanceModule::RegisterModHooks()
                 // Buildables use the interact distance EXCEPT for conveyor belts/lifts, because the only interaction is picking things up
                 (self->mBestUsableActor->IsA(AFGBuildable::StaticClass()) && !self->mBestUsableActor->IsA(AFGBuildableConveyorBase::StaticClass()))
                 // For dismantle crates and decoration actors
-                || self->mBestUsableActor->IsA(AFGInteractActor::StaticClass())
-                // Drop pods are interactable too
-                || self->mBestUsableActor->IsA(AFGDropPod::StaticClass());
+                || self->mBestUsableActor->IsA(AFGInteractActor::StaticClass());
 
             if (useInteractDistance)
             {
