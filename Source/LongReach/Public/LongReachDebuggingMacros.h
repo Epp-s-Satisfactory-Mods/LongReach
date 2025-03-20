@@ -5,6 +5,13 @@
 #include "LongReachLogMacros.h"
 
 #if LR_DEBUGGING_ENABLED
+#define LR_DUMP_PLAYER( PREFIX, PLAYER ) \
+    LongReachDebugging::DumpPlayer( PREFIX, PLAYER );
+#else
+#define LR_DUMP_PLAYER( PREFIX, PLAYER )
+#endif
+
+#if LR_DEBUGGING_ENABLED
 #define LR_DUMP_PLAYER_CONTROLLER( PREFIX, PLAYER_CONTROLLER ) \
     LongReachDebugging::DumpPlayerController( PREFIX, PLAYER_CONTROLLER );
 #else

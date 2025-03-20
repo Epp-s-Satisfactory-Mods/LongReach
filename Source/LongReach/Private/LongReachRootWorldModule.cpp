@@ -12,7 +12,8 @@
 void ULongReachRootWorldModule::GetPlayerUseDistances(
     const AFGPlayerController* playerController,
     float& interactDistanceInCM,
-    float& pickupDistanceInCM)
+    float& pickupDistanceInCM,
+    float& vehicleInteractDistanceInCM)
 {
     auto config = this->ConfigByPlayerController.Find(playerController);
 
@@ -31,6 +32,7 @@ void ULongReachRootWorldModule::GetPlayerUseDistances(
 
     interactDistanceInCM = config->InteractDistanceInCM;
     pickupDistanceInCM = config->PickupDistanceInCM;
+    vehicleInteractDistanceInCM = config->VehicleInteractDistanceInCM;
 }
 
 float ULongReachRootWorldModule::GetPlayerConstructionDistanceInCM(const AFGPlayerController* playerController)
@@ -64,6 +66,7 @@ void ULongReachRootWorldModule::SetConfig(AFGPlayerController* playerController,
     configInCM.InteractDistanceInCM = config.InteractDistanceInMeters * 100;
     configInCM.PickupDistanceInCM = config.PickupDistanceInMeters * 100;
     configInCM.ConstructionDistanceInCM = config.ConstructionDistanceInMeters * 100;
+    configInCM.VehicleInteractDistanceInCM = config.VehicleInteractDistanceInMeters * 100;
 
     this->ConfigByPlayerController.Emplace(playerController, configInCM);
 }
@@ -126,7 +129,8 @@ void ULongReachRootWorldModule::DispatchLifecycleEvent(ELifecyclePhase phase)
 
                 if (propertyName.Equals(TEXT("InteractDistanceInMeters")) ||
                     propertyName.Equals(TEXT("PickupDistanceInMeters")) ||
-                    propertyName.Equals(TEXT("ConstructionDistanceInMeters")) )
+                    propertyName.Equals(TEXT("ConstructionDistanceInMeters")) ||
+                    propertyName.Equals(TEXT("VehicleInteractDistanceInMeters")) )
                 {
                     LR_LOG("ULongReachRootWorldModule::DispatchLifecycleEvent: \tSubscribing to changes on %s, property at %p!", *propertyName, configProperty);
                     configProperty->OnPropertyValueChanged.AddDynamic(this, &ULongReachRootWorldModule::UpdateConfig);

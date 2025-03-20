@@ -64,20 +64,22 @@ void LongReachDebugging::DumpConfigInCM(FString prefix, FLongReachConfigInCM& co
 {
     EnsureColon(prefix);
 
-    LR_LOG("%s InteractDistanceInCM: %f, PickupDistanceInCM: %f, ConstructionDistanceInCM: %f",
+    LR_LOG("%s InteractDistanceInCM: %f, PickupDistanceInCM: %f, ConstructionDistanceInCM: %f, VehicleInteractDistanceInCM: %f",
         *prefix,
         config.InteractDistanceInCM,
         config.PickupDistanceInCM,
-        config.ConstructionDistanceInCM);
+        config.ConstructionDistanceInCM,
+        config.VehicleInteractDistanceInCM);
 }
 
 void LongReachDebugging::DumpConfigStruct(FString prefix, FLongReachConfigurationStruct& config)
 {
     EnsureColon(prefix);
 
-    LR_LOG("%s InteractDistanceInMeters: %f, PickupDistanceInMeters: %f, ConstructionDistanceInMeters: %f",
+    LR_LOG("%s InteractDistanceInMeters: %f, PickupDistanceInMeters: %f, ConstructionDistanceInMeters: %f, VehicleInteractDistanceInMeters: %f",
         *prefix,
         config.InteractDistanceInMeters,
         config.PickupDistanceInMeters,
-        config.ConstructionDistanceInMeters);
+        config.ConstructionDistanceInMeters,
+        config.VehicleInteractDistanceInMeters);
 }

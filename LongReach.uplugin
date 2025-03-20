@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
 	"Version": 0,
-	"VersionName": "0.3.1",
+	"VersionName": "0.4.0",
 	"FriendlyName": "Long Reach",
 	"Description": "Extend your reach!",
 	"Category": "Modding",
@@ -25,9 +25,9 @@
 		{
 			"Name": "SML",
 			"Enabled": true,
-			"SemVersion": "^3.9.1"
+			"SemVersion": "^3.10.0"
 		}
 	],
-	"SemVersion": "0.3.1",
+	"SemVersion": "0.4.0",
 	"GameVersion": ">=383729"
 }

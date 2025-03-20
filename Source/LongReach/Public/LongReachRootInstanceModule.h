@@ -14,6 +14,8 @@ class LONGREACH_API ULongReachRootInstanceModule : public UGameInstanceModule
 public:
     void DispatchLifecycleEvent(ELifecyclePhase phase) override;
     static void RegisterModHooks();
+    static FORCEINLINE bool UsesInteractDistance(AActor* actor);
+    static FORCEINLINE bool UsesVehicleInteractDistance(AActor* actor);
 
     static ULongReachRootWorldModule* GetGameWorldModule()
     {

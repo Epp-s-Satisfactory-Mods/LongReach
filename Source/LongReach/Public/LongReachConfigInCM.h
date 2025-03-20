@@ -7,5 +7,6 @@ public:
     float InteractDistanceInCM;
     float PickupDistanceInCM;
     float ConstructionDistanceInCM;
+    float VehicleInteractDistanceInCM;
 };
 

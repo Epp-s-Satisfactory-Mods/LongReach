@@ -20,7 +20,8 @@ public:
     void GetPlayerUseDistances(
         const AFGPlayerController* player,
         float& useDistanceInCM,
-        float& pickupDistanceInCM);
+        float& pickupDistanceInCM,
+        float& vehicleInteractDistanceInCM);
 
     float GetPlayerConstructionDistanceInCM(const AFGPlayerController* player);
 

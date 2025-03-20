@@ -18,6 +18,9 @@ public:
     UPROPERTY(BlueprintReadWrite)
     float ConstructionDistanceInMeters{};
 
+    UPROPERTY(BlueprintReadWrite)
+    float VehicleInteractDistanceInMeters{};
+
     /* Retrieves active configuration value and returns object of this struct containing it */
     static FLongReachConfigurationStruct GetActiveConfig(UObject* WorldContext) {
         FLongReachConfigurationStruct ConfigStruct{};
